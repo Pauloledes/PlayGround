@@ -3,7 +3,6 @@ import logging
 import shutil
 from typing import NamedTuple, List
 import matplotlib.pyplot as plt
-import numpy as np
 import treefiles as tf
 from eulerian_magnification.io import load_video_float
 from matplotlib.animation import FuncAnimation, PillowWriter
@@ -18,6 +17,20 @@ class Param(NamedTuple):
 
 
 def main(x: Param, y: Param, videos_dir, final_filename):
+    """
+    Function allowing the creation of a dynamic plot containing x rows and y columns. Each row is a freq min while
+    each column is a freq max. It is used to filter frequencies and amplify the moves
+    from an initial video. Each video created has its frames stored in a folder. videos_dir is an array containing
+    all the paths to the frames.
+    A gif is finally created and contains the plot result.
+
+    :param x: Array of the freq min to apply
+    :param y: Array of the freq max to apply
+    :param videos_dir: Array containing the paths to each folder containing all the frames
+    :param final_filename: name of the gif created
+    :return: None
+    """
+
     fig, axs = prepare_canvas(x, y, figsize=(6, 6))
     nx, ny = len(x.values), len(y.values)
     set_labels(x, y, axs)
@@ -32,6 +45,11 @@ def main(x: Param, y: Param, videos_dir, final_filename):
         imgs.append(axs.imshow(np.load(f'{videos_dir[0]}/F_0.npy')))
 
     def update(frame):
+        """
+        Function used by FunAnimation to concatenate the frames in the final plot
+        :param frame: number of the frame to add
+        :return:
+        """
         for n in range(nx * ny):
             imgs[n].set_array(np.load(f'{videos_dir[n]}/F_{frame}.npy'))
         return imgs
@@ -40,11 +58,18 @@ def main(x: Param, y: Param, videos_dir, final_filename):
     ani = FuncAnimation(fig, update, frames=nb_frames, blit=True, interval=300, repeat=False)
     plt.tight_layout()
     writergif = PillowWriter(fps=nb_frames)
-    ani.save(filename=str(final_filename) + ".gif", writer=writergif)  # , fps=nb_frames)
+    ani.save(filename=f'{final_filename}.gif', writer=writergif)  
     plt.show()
 
 
 def set_labels(x: Param, y: Param, axs):
+    """
+    Function allowing to label the plot where the videos will be stored in.
+    :param x: Array of the freq min to apply
+    :param y: Array of the freq max to apply
+    :param axs: axs to work on
+    :return: None
+    """
     for k in ["x", "y"]:
         for i, v in enumerate(locals()[k].values):
             try:
@@ -62,6 +87,15 @@ def set_labels(x: Param, y: Param, axs):
 
 
 def prepare_canvas(x: Param, y: Param, title=None, **kw):
+    """
+    Function allowing the build of a plot where the videos will be stored in.
+    :param x: Array of the freq min to apply
+    :param y: Array of the freq max to apply
+    :param title: optional, title of the plot
+    :param kw: other keywords
+    :return: fig, axs
+    """
+
     plt.rcParams["xtick.bottom"] = plt.rcParams["xtick.labelbottom"] = False
     plt.rcParams["xtick.top"] = plt.rcParams["xtick.labeltop"] = True
     plt.rcParams["ytick.left"] = plt.rcParams["ytick.labelleft"] = True
@@ -89,6 +123,14 @@ def prepare_canvas(x: Param, y: Param, title=None, **kw):
 
 
 def save_frames(videos):
+    """
+    Save of the frames of each videos magnified via EVM in a folder named upon the characteristics of the
+    transformation performed
+    :param videos: Array of string containing the names of all the videos created by EVM
+    :return: videos_dir : Array of string containing the paths to each folder containing the frames for each video.
+    Each frame is stored in the npy extension
+    """
+
     videos_dir = []
 
     for v in videos:
@@ -109,13 +151,13 @@ def save_frames(videos):
 
 
 def delete_dirs(videos_dir):
+    """
+    Once all the actions have been performed, this function allows the delete of all the folders containing the frames
+    :param videos_dir: Array of string containing the paths to each folder containing the frames for each video
+    :return: None
+    """
     for folder in videos_dir:
         shutil.rmtree(folder)
-
-
-def get_random(dims, frames):
-    vid = [*dims, 3, frames]
-    return np.random.rand(*vid)
 
 
 log = logging.getLogger(__name__)
@@ -124,16 +166,16 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     log = tf.get_logger()
 
-    _x = Param("lower_hertz", [0, 0.3, 0.4])#, 0.5, 0.6, 0.7, 0.8, 0.9])#, 0.1, 0.2, 0.3])  # , 0.4, 0.5])
-    _y = Param("upper_hertz", [1, 2])  # , 4, 5, 6])#, 1.2, 1.4, 1.6])  # , 0.9, 1])
+    _x = Param("lower_hertz", [0, 0.2, 0.3, 0.4])#, 0.5])#, 0.6])#, 0.7, 0.8, 0.9])#, 0.1, 0.2, 0.3])  # , 0.4, 0.5])
+    _y = Param("upper_hertz", [1, 2, 3, 4])#, 5, 6])#, 1.2, 1.4, 1.6])  # , 0.9, 1])
 
     root = tf.Tree.new(__file__, "data")
     root.file(m="wrist.mp4")
     vid, fps = load_video_float(root.m)
-    great_dico = {'amplification_factor': 10, 'lower_hertz': _x.values, 'upper_hertz': _y.values,
+    great_dico = {'amplification_factor': 100, 'lower_hertz': _x.values, 'upper_hertz': _y.values,
                   'pyramid_levels': 4}
     videos = apply_multiple_evms(vid, fps, great_dico)
     videos_dir = save_frames(videos)
 
-    main(_x, _y, videos_dir, "testtestvideo5")
+    main(_x, _y, videos_dir, "Final_gif")
     delete_dirs(videos_dir)

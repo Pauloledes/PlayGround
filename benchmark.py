@@ -3,10 +3,17 @@ import treefiles as tf
 from eulerian_magnification import eulerian_magnification
 from eulerian_magnification.io import load_video_float, save_video
 import gc
-import numpy as np
 
 
 def apply_evm(vid, fps, videoname:str, dico=None):
+    """
+    Performs the eulerian video magnification for a given set of parameters on the given video
+    :param vid: video to apply evm on
+    :param fps: fps of the video
+    :param videoname: name of the amplified video that will be saved
+    :param dico: dictionary containing the set of parameters for evm
+    :return: Magnified video
+    """
     if dico is None:
         dico = {'amplification_factor': 100, 'lower_hertz': 0, 'upper_hertz': 1, 'pyramid_levels': 4}
 
@@ -14,7 +21,7 @@ def apply_evm(vid, fps, videoname:str, dico=None):
     upper_hertz = dico['upper_hertz']
     amplification_factor = dico['amplification_factor']
     pyramid_levels = dico['pyramid_levels']
-    vid = eulerian_magnification(
+    vid_to_return = eulerian_magnification(
         vid,
         fps,
         freq_min=lower_hertz,
@@ -22,11 +29,20 @@ def apply_evm(vid, fps, videoname:str, dico=None):
         amplification=amplification_factor,
         pyramid_levels=pyramid_levels,
     )
-    save_video(vid, fps, videoname)
-    return vid
+    save_video(vid_to_return, fps, videoname)
+    return vid_to_return
 
 
 def run_loop(great_dico, dico, vid, fps, videos):
+    """
+    Function that calls apply_evm for all the parameters given
+    :param great_dico: dictionary containing all the parameters
+    :param dico: dicionary containing the set of parameters to apply evm with
+    :param vid: video to apply evm on
+    :param fps: fps of the video
+    :param videos: empty array where the names of the magnified videos will be stored in
+    :return: None
+    """
     for j in range(len(great_dico['upper_hertz'])):
         dico['upper_hertz'] = great_dico['upper_hertz'][j]
 
@@ -50,7 +66,15 @@ def run_loop(great_dico, dico, vid, fps, videos):
         videos.append(video_name)
         gc.collect()
 
+
 def apply_multiple_evms(vid, fps, great_dico):
+    """
+    Function that calss run_loop and return the results obtained
+    :param vid: video to apply evm on
+    :param fps: fps of the video
+    :param great_dico: dictionary containing all the parameters
+    :return:  array of string containing the names of the magnified videos
+    """
     print(f'Applying EVM for set of parameters : {great_dico}')
     videos = []
     for i in range(len(great_dico['lower_hertz'])):
