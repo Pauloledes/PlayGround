@@ -31,7 +31,7 @@ def main(x: Param, y: Param, videos_dir, final_filename):
     :return: None
     """
 
-    fig, axs = prepare_canvas(x, y, figsize=(6, 6))
+    fig, axs = prepare_canvas(x, y, title=final_filename, figsize=(6, 6))
     nx, ny = len(x.values), len(y.values)
     set_labels(x, y, axs)
 
@@ -58,7 +58,7 @@ def main(x: Param, y: Param, videos_dir, final_filename):
     ani = FuncAnimation(fig, update, frames=nb_frames, blit=True, interval=300, repeat=False)
     plt.tight_layout()
     writergif = PillowWriter(fps=nb_frames)
-    ani.save(filename=f'{final_filename}.gif', writer=writergif)  
+    ani.save(filename=f'{final_filename}.gif', writer=writergif)
     plt.show()
 
 
@@ -160,22 +160,51 @@ def delete_dirs(videos_dir):
         shutil.rmtree(folder)
 
 
-log = logging.getLogger(__name__)
+def set_gif_name(video_to_analyse):
+    constants = '_'
+    for i in [amp, lowh, upph, pyrlvl]:
+        if len(i.values) == 1:
+            constants += f'_{i.name} = {i.values[0]}'
+
+    gif_name = f'{video_to_analyse[:-4]}_{constants}'
+    return gif_name
+
 
 if __name__ == "__main__":
+    log = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG)
     log = tf.get_logger()
 
-    _x = Param("lower_hertz", [0, 0.2, 0.3, 0.4])#, 0.5])#, 0.6])#, 0.7, 0.8, 0.9])#, 0.1, 0.2, 0.3])  # , 0.4, 0.5])
-    _y = Param("upper_hertz", [1, 2, 3, 4])#, 5, 6])#, 1.2, 1.4, 1.6])  # , 0.9, 1])
+    # The video to analyse is mentioned here and should be placer in the 'data' folder
+    # video_to_analyse = "troncated_wrist.avi"
+    video_to_analyse = "wrist.mp4"
+
+    # Different sets of parameters to use for magnification, only two of them can have a length>1
+    amp = Param("amplification_factor", [20, 35, 50])
+    lowh = Param("lower_hertz", [0.4])
+    upph = Param("upper_hertz", [2,3,4])
+    pyrlvl = Param("pyramid_levels", [4])
+
+    # _x = Param("amplification_factor", [0, 1, 2])  # ,1,2,3,4,5])
+    # # _x = Param("lower_hertz", [0])  # , 0.2, 0.3, 0.4])#,
+    # _y = Param("upper_hertz", [1, 2])  # ,2,3,4])  # , 2, 3, 4])#, 5, 6])#, 1.2, 1.4, 1.6])  # , 0.9, 1])
+
+    great_dico = {amp.name: amp.values, lowh.name: lowh.values, upph.name: upph.values,
+                   pyrlvl.name: pyrlvl.values}
 
     root = tf.Tree.new(__file__, "data")
-    root.file(m="wrist.mp4")
+    root.file(m=video_to_analyse)
     vid, fps = load_video_float(root.m)
-    great_dico = {'amplification_factor': 100, 'lower_hertz': _x.values, 'upper_hertz': _y.values,
-                  'pyramid_levels': 4}
+    # great_dico = {'amplification_factor': 10, 'lower_hertz': _x.values, 'upper_hertz': _y.values,
+    #               'pyramid_levels': 4}
+    # great_dico = {'amplification_factor': _x.values, 'lower_hertz': [0.4], 'upper_hertz': _y.values,
+    #               'pyramid_levels': [4]}
+
     videos = apply_multiple_evms(vid, fps, great_dico)
     videos_dir = save_frames(videos)
+    # main(_x, _y, videos_dir, f'{video_to_analyse[:-4]}_ampli10')
 
-    main(_x, _y, videos_dir, "Final_gif")
+    main(amp, upph, videos_dir, set_gif_name(video_to_analyse))
     delete_dirs(videos_dir)
+
+

@@ -46,30 +46,39 @@ def run_loop(great_dico, dico, vid, fps, videos):
     for j in range(len(great_dico['upper_hertz'])):
         dico['upper_hertz'] = great_dico['upper_hertz'][j]
 
-        try:
-            for k in range(len(great_dico['amplification_factor'])):
-                dico['amplification_factor'] = great_dico['amplification_factor'][k]
-        except TypeError:
-            dico['amplification_factor'] = great_dico['amplification_factor']
+        for k in range(len(great_dico['amplification_factor'])):
+            dico['amplification_factor'] = great_dico['amplification_factor'][k]
 
-        try:
             for l in range(len(great_dico['pyramid_levels'])):
                 dico['pyramid_levels'] = great_dico['pyramid_levels'][l]
-        except TypeError:
-            dico['pyramid_levels'] = great_dico['pyramid_levels']
 
-        name = f"EVM_freqmin={str(dico['lower_hertz'])}_freqmax={str(dico['upper_hertz'])}" \
-               f"_ampli={str(dico['amplification_factor'])}.avi"
-        print(name)
-        video_name = f'data/{name}'
-        apply_evm(vid, fps, video_name, dico=dico)
-        videos.append(video_name)
-        gc.collect()
+        #
+        # try:
+        #     for k in range(len(great_dico['amplification_factor'])):
+        #         dico['amplification_factor'] = great_dico['amplification_factor'][k]
+        # except TypeError:
+        #     dico['amplification_factor'] = great_dico['amplification_factor']
+        #
+        # try:
+        #     for l in range(len(great_dico['pyramid_levels'])):
+        #         dico['pyramid_levels'] = great_dico['pyramid_levels'][l]
+        # except TypeError:
+        #     dico['pyramid_levels'] = great_dico['pyramid_levels']
+
+                name = f"EVM_freqmin={str(dico['lower_hertz'])}_freqmax={str(dico['upper_hertz'])}" \
+                       f"_ampli={str(dico['amplification_factor'])}.avi"
+                print(f'name={name}')
+                video_name = f'data/{name}'
+                print(f'video_name{video_name}')
+                print(f'dico{dico}')
+                apply_evm(vid, fps, video_name, dico=dico)
+                videos.append(video_name)
+                gc.collect()
 
 
 def apply_multiple_evms(vid, fps, great_dico):
     """
-    Function that calss run_loop and return the results obtained
+    Function that calls run_loop and return the results obtained
     :param vid: video to apply evm on
     :param fps: fps of the video
     :param great_dico: dictionary containing all the parameters
@@ -77,12 +86,22 @@ def apply_multiple_evms(vid, fps, great_dico):
     """
     print(f'Applying EVM for set of parameters : {great_dico}')
     videos = []
+    # try:
+    #     for i in range(len(great_dico['lower_hertz'])):
+    #         dico = {}
+    #         dico['lower_hertz'] = great_dico['lower_hertz'][i]
+    # except TypeError:
+    #     dico = {'lower_hertz': great_dico['lower_hertz']}
+    # run_loop(great_dico, dico, vid, fps, videos)
+    # del dico
+    # gc.collect()
+
     for i in range(len(great_dico['lower_hertz'])):
         dico = {}
         dico['lower_hertz'] = great_dico['lower_hertz'][i]
         run_loop(great_dico, dico, vid, fps, videos)
-        del dico
-        gc.collect()
+    del dico
+    gc.collect()
 
     return videos
 
