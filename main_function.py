@@ -58,7 +58,11 @@ def main(x: Param, y: Param, videos_dir, final_filename):
     ani = FuncAnimation(fig, update, frames=nb_frames, blit=True, interval=300, repeat=False)
     plt.tight_layout()
     writergif = PillowWriter(fps=nb_frames)
-    ani.save(filename=f'{final_filename}.gif', writer=writergif)
+
+    if not os.path.exists('gif_folder'):
+        os.mkdir('gif_folder')
+
+    ani.save(filename=f'gif_folder/{final_filename}.gif', writer=writergif)
     plt.show()
 
 
@@ -124,7 +128,7 @@ def prepare_canvas(x: Param, y: Param, title=None, **kw):
 
 def save_frames(videos):
     """
-    Save of the frames of each videos magnified via EVM in a folder named upon the characteristics of the
+    Save the frames of each videos magnified via EVM in a folder named upon the characteristics of the
     transformation performed
     :param videos: Array of string containing the names of all the videos created by EVM
     :return: videos_dir : Array of string containing the paths to each folder containing the frames for each video.
@@ -157,6 +161,7 @@ def delete_dirs(videos_dir):
     :return: None
     """
     for folder in videos_dir:
+        print(folder)
         shutil.rmtree(folder)
 
 
@@ -180,14 +185,10 @@ if __name__ == "__main__":
     video_to_analyse = "wrist.mp4"
 
     # Different sets of parameters to use for magnification, only two of them can have a length>1
-    amp = Param("amplification_factor", [20, 35, 50])
+    amp = Param("amplification_factor", [20])#,30])#,50,100])#,100,200])
     lowh = Param("lower_hertz", [0.4])
-    upph = Param("upper_hertz", [2,3,4])
+    upph = Param("upper_hertz", [2])#,3])#,4])
     pyrlvl = Param("pyramid_levels", [4])
-
-    # _x = Param("amplification_factor", [0, 1, 2])  # ,1,2,3,4,5])
-    # # _x = Param("lower_hertz", [0])  # , 0.2, 0.3, 0.4])#,
-    # _y = Param("upper_hertz", [1, 2])  # ,2,3,4])  # , 2, 3, 4])#, 5, 6])#, 1.2, 1.4, 1.6])  # , 0.9, 1])
 
     great_dico = {amp.name: amp.values, lowh.name: lowh.values, upph.name: upph.values,
                    pyrlvl.name: pyrlvl.values}
@@ -195,14 +196,19 @@ if __name__ == "__main__":
     root = tf.Tree.new(__file__, "data")
     root.file(m=video_to_analyse)
     vid, fps = load_video_float(root.m)
-    # great_dico = {'amplification_factor': 10, 'lower_hertz': _x.values, 'upper_hertz': _y.values,
-    #               'pyramid_levels': 4}
-    # great_dico = {'amplification_factor': _x.values, 'lower_hertz': [0.4], 'upper_hertz': _y.values,
-    #               'pyramid_levels': [4]}
 
-    videos = apply_multiple_evms(vid, fps, great_dico)
+    # Geometric infos
+    first_row = 150
+    last_row = 250
+    first_col = 300
+    last_col = 450
+
+    # Choose one
+    area = {'first_row': first_row, 'last_row': last_row, 'first_col' : first_col, 'last_col' : last_col}
+    # area=None
+
+    videos = apply_multiple_evms(vid, video_to_analyse, fps, great_dico, area)
     videos_dir = save_frames(videos)
-    # main(_x, _y, videos_dir, f'{video_to_analyse[:-4]}_ampli10')
 
     main(amp, upph, videos_dir, set_gif_name(video_to_analyse))
     delete_dirs(videos_dir)

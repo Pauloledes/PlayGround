@@ -1,23 +1,54 @@
+import numpy as np
 from eulerian_magnification.io import load_video_float, save_video
 import treefiles as tf
 
 
+def zoom(video, area:dict=None):
+    """
+    Take a video and return the same video zoomed upon the specified area
+    :param video:
+    :param area: dictionary containing infos for zoom, should be like this
+     area = {'first_row': first_row, 'last_row': last_row, 'first_col' : first_col, 'last_col' : last_col}
+    :return: - truncated_vid = array containing the truncated video obtained
+             - area = reminder of the area selected, might be useful if needed by other functions
+    """
+    if area == None:
+        first_row = 150
+        last_row = 250
 
-def zoom(video, area):
+        first_col = 300
+        last_col = 450
+
+        area = {'first_row': first_row, 'last_row': last_row, 'first_col': first_col, 'last_col': last_col}
+
+
     truncated_vid = video[:, area['first_row']:area['last_row'], area['first_col']:area['last_col'], :]
     return truncated_vid
 
 
-def overlay_video(vid1, vid2, area, save:bool = True, title='overlaid_wrist'):
+def overlay_video(vid1, vid2, fps, area, save:bool = True, title='overlaid_wrist'):
+    """
+    Overlay vid1 on an area from vid2. Obviously, vid1.shape shall be smaller than vid2.shape
+    :param vid1: Video to overlay with
+    :param vid2: Video overlaid
+    :param area: Area where vid1 will be inserted in
+    :param save: Boolean, if True the video created is saved
+    :param title: if save=True, video name
+    :return: overlaid_vid = array containing the overlaid video obtained
+    """
+    overlaid_vid = np.copy(vid2)
+
     for i1, i2 in zip(range(area['first_row'], area['last_row']), range(vid1.shape[1])):
         for j1, j2 in zip(range(area['first_col'], area['last_col']), range(vid1.shape[2])):
-            vid2[:, i1, j1, :] = vid1[:, i2, j2, :]
+            overlaid_vid[:, i1, j1, :] = vid1[:, i2, j2, :]
 
     if save:
-        save_video(vid2, fps2, f'{title}.avi')
+        if title.endswith('avi'):
+            save_video(overlaid_vid, fps, f'{title}')
+        else:
+            save_video(overlaid_vid, fps, f'{title}.avi')
 
-    return vid2
-
+    return overlaid_vid
 
 
 if __name__ == '__main__':
@@ -52,10 +83,13 @@ if __name__ == '__main__':
     last_col = 450
 
     area = {'first_row': first_row, 'last_row': last_row, 'first_col' : first_col, 'last_col' : last_col}
+    area=None
 
-    truncated_video = zoom(vid3, area)
+    if area is not None:
+        truncated_video = zoom(vid2, area)
+        new_vid = f'test'
 
-    new_vid = f'overlaid_{first_video}_{vid_magnified[4:-4]}'
+    # new_vid = f'overlaid_{first_video}_{vid_magnified[4:-4]}'
     overlay_video(truncated_video, vid2, area, save=True, title=new_vid)
 
 
