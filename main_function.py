@@ -161,7 +161,6 @@ def delete_dirs(videos_dir):
     :return: None
     """
     for folder in videos_dir:
-        print(folder)
         shutil.rmtree(folder)
 
 
@@ -185,9 +184,9 @@ if __name__ == "__main__":
     video_to_analyse = "wrist.mp4"
 
     # Different sets of parameters to use for magnification, only two of them can have a length>1
-    amp = Param("amplification_factor", [20])#,30])#,50,100])#,100,200])
+    amp = Param("amplification_factor", [30,40,50])#,100,200])
     lowh = Param("lower_hertz", [0.4])
-    upph = Param("upper_hertz", [2])#,3])#,4])
+    upph = Param("upper_hertz", [2])#,4])
     pyrlvl = Param("pyramid_levels", [4])
 
     great_dico = {amp.name: amp.values, lowh.name: lowh.values, upph.name: upph.values,
@@ -204,8 +203,8 @@ if __name__ == "__main__":
     last_col = 450
 
     # Choose one
-    area = {'first_row': first_row, 'last_row': last_row, 'first_col' : first_col, 'last_col' : last_col}
-    # area=None
+    # area = {'first_row': first_row, 'last_row': last_row, 'first_col' : first_col, 'last_col' : last_col}
+    area=None
 
     videos = apply_multiple_evms(vid, video_to_analyse, fps, great_dico, area)
     videos_dir = save_frames(videos)
